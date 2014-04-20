@@ -19,3 +19,5 @@
 *.exe
 *.out
 *.app
+/proj.win32/Debug.win32
+/proj.win32/TouchPro.sdf
