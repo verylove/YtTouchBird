@@ -1,5 +1,6 @@
 #include "HelloWorldScene.h"
 
+
 USING_NS_CC;
 
 CCScene* HelloWorld::scene()
@@ -28,21 +29,64 @@ bool HelloWorld::init()
     }
 	this->screenSize = CCDirector::sharedDirector()->getVisibleSize();
  
+	//加载PLIST
+	//CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("flappy_packer.plist");
+
+	this->cache = CCSpriteFrameCache::sharedSpriteFrameCache();
+	this->cache->addSpriteFramesWithFile("flappy_packer.plist","flappy_packer.png");
+
 	initWorld();
+
+	addBg();
+	addGround(123);
 	addBrid();
 	addBarContainer();
-	addGround();
 
-	scheduleUpdate();
-	schedule(schedule_selector(HelloWorld::addBar),1);
+	scheduleOnce(schedule_selector(HelloWorld::startGame),3);
 
 	setTouchEnabled(true);
 
     return true;
 }
 
+
+void HelloWorld::loading()
+{
+	
+}
+
 void HelloWorld::initWorld(){
 	this->world = new b2World(b2Vec2(0,-9.8));
+
+	//设置子元素侦听
+	this->world->SetContactListener(this);
+}
+
+void HelloWorld::startGame( float dt)
+{
+	scheduleUpdate();
+	schedule(schedule_selector(HelloWorld::addBar),1);
+	//schedule(schedule_selector(HelloWorld::addGround),0.5);
+}
+
+void HelloWorld::endGame()
+{
+	unscheduleUpdate();
+	unschedule(schedule_selector(HelloWorld::addBar));
+}
+
+//侦听子元素链接开始
+void HelloWorld::BeginContact(b2Contact* contact) {
+	if(contact->GetFixtureA()->GetBody()->GetUserData()==bird||
+	   contact->GetFixtureB()->GetBody()->GetUserData()==bird){
+		   endGame();
+		   CCMessageBox("游戏失败","游戏失败");
+	}
+}
+
+//侦听子元素链接结束
+void HelloWorld::EndContact(b2Contact* contact) { 
+	
 }
 
 void HelloWorld::update(float dt){
@@ -54,25 +98,55 @@ void HelloWorld::update(float dt){
 		b2Body *b = node;
 		node  = node->GetNext();
 		if(b->GetUserData()!=NULL){
-			if(b->GetPosition().x<-3){
-				s = (CCSprite*)b->GetUserData();
-				if(s!=NULL){
-					s->removeFromParent();
-					CCLog("remove");
+			if(b->GetUserData()!=this->ground){
+				if(b->GetPosition().x<-3){
+					s = (CCSprite*)b->GetUserData();
+					if(s!=NULL){
+						s->removeFromParent();
+						CCLog("remove");
+					}
+					this->world->DestroyBody(b);
 				}
-				this->world->DestroyBody(b);
+			}else{
+				if(b->GetPosition().x<0){
+					addGround(dt);
+				}
+
 			}
 		}
 	}
+	
+	
+
+	
+}
+
+void HelloWorld::addBg()
+{
+	this->bg = B2Sprite::create("bg.png");
+	CCSize size = this->bg->getContentSize();
+
+	b2BodyDef bgBodyDef;
+	bgBodyDef.type = b2_staticBody;
+	bgBodyDef.position = b2Vec2(size.width/2/RATIO,size.height/2/RATIO);
+	b2Body *bgBody = this->world->CreateBody(&bgBodyDef);
+
+	this->bg->setPTMRatio(RATIO);
+	this->bg->setB2Body(bgBody);
+	addChild(this->bg);
 }
 
 void HelloWorld::addBrid(){
-	this->bird = B2Sprite::create("CloseNormal.png");
+	//this->bird = B2Sprite::create("CloseNormal.png");
+	//this->bird = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("bird1.png"));
+	this->bird = (Bird *)Bird::create();
+	
+
 	CCSize size = this->bird->getContentSize();
 
 	b2BodyDef bodyDef;
 	bodyDef.type = b2_dynamicBody;//动态的
-	bodyDef.position = b2Vec2(screenSize.width/2/RATIO,9);
+	bodyDef.position = b2Vec2(screenSize.width/4/RATIO,9);
 	b2Body *birdBody = this->world->CreateBody(&bodyDef);
 
 	b2PolygonShape birdShape;
@@ -85,17 +159,21 @@ void HelloWorld::addBrid(){
 	this->bird->setPTMRatio(RATIO);
 	this->bird->setB2Body(birdBody);
 	this->addChild(this->bird);
+	this->bird->fly();
 }
 
-void HelloWorld::addGround()
+void HelloWorld::addGround( float dt)
 {
-	B2Sprite *ground = B2Sprite::create("ground1.png");
+	//B2Sprite *ground = B2Sprite::create("ground.png");
+	//B2Sprite *ground = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("ground.png"));
+	this->ground = B2Sprite::create("ground.png");
 	CCSize size = ground->getContentSize();
 
 
 	b2BodyDef bDef;
-	bDef.type = b2_staticBody;
+	bDef.type = b2_kinematicBody;
 	bDef.position = b2Vec2(size.width/2/RATIO,size.height/2/RATIO);
+	bDef.linearVelocity = b2Vec2(-5,0);
 	b2Body *groundBody = this->world->CreateBody(&bDef);
 
 	b2PolygonShape groundShape;
@@ -105,10 +183,32 @@ void HelloWorld::addGround()
 	groundFixtureDef.shape = &groundShape;
 	groundBody->CreateFixture(&groundFixtureDef);
 
-	ground->setB2Body(groundBody);
-	ground->setPTMRatio(RATIO);
+	this->ground->setB2Body(groundBody);
+	this->ground->setPTMRatio(RATIO);
 
-	this->addChild(ground);
+	this->addChild(this->ground);
+
+
+	this->ground2 = B2Sprite::create("ground.png");
+
+
+	b2BodyDef bDef2;
+	bDef2.type = b2_kinematicBody;
+	bDef2.position = b2Vec2(size.width/RATIO,size.height/2/RATIO);
+	bDef2.linearVelocity = b2Vec2(-5,0);
+	b2Body *groundBody2 = this->world->CreateBody(&bDef2);
+
+	b2PolygonShape groundShape2;
+	groundShape2.SetAsBox(size.width/2/RATIO,size.height/2/RATIO);
+
+	b2FixtureDef groundFixtureDef2;
+	groundFixtureDef2.shape = &groundShape;
+	groundBody2->CreateFixture(&groundFixtureDef2);
+
+	this->ground2->setB2Body(groundBody2);
+	this->ground2->setPTMRatio(RATIO);
+
+	this->addChild(this->ground2);
 }
 
 void HelloWorld::addBar(float dt)
@@ -117,7 +217,10 @@ void HelloWorld::addBar(float dt)
 
 	//down bar 
 
-	B2Sprite *down_bar = B2Sprite::create("bar_down.png");
+	//B2Sprite *down_bar = B2Sprite::create("bar_down.png");
+	
+	B2Sprite *down_bar = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("holdback1.png"));
+
 	CCSize down_bar_size = down_bar->getContentSize();
 
 	b2BodyDef down_bar_body_def;
@@ -146,7 +249,9 @@ void HelloWorld::addBar(float dt)
 	this->barContainer->addChild(down_bar);
 
 	//up bar 
-	B2Sprite *up_bar = B2Sprite::create("bar_up.png");
+	//B2Sprite *up_bar = B2Sprite::create("bar_up.png");
+	B2Sprite *up_bar = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("holdback2.png"));
+
 	CCSize up_bar_size = up_bar->getContentSize();
 
 	b2BodyDef up_bar_body_def;
