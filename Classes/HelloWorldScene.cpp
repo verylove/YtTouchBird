@@ -1,5 +1,5 @@
 #include "HelloWorldScene.h"
-
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 
@@ -30,23 +30,30 @@ bool HelloWorld::init()
 	this->screenSize = CCDirector::sharedDirector()->getVisibleSize();
  
 	//¼ÓÔØPLIST
-	//CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("flappy_packer.plist");
-
 	this->cache = CCSpriteFrameCache::sharedSpriteFrameCache();
 	this->cache->addSpriteFramesWithFile("flappy_packer.plist","flappy_packer.png");
+
+
+	CCSprite *startgame = CCSprite::createWithSpriteFrameName("getready.png");
+	startgame->setPosition(ccp(this->screenSize.width/2,this->screenSize.height/2+300));
+	addChild(startgame,1);
+
+
+	CCMenuItemImage *startgameItemImage = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	CCMenu* menu = CCMenu::create(startgameItemImage,NULL);
+	addChild(menu,1);
+
+	CocosDenshion::SimpleAudioEngine::sharedEngine()->preloadEffect("mp3/fly.mp3");
+	 CocosDenshion::SimpleAudioEngine::sharedEngine()->preloadEffect("mp3/dead.wav");
 
 	initWorld();
 
 	addBg();
 	addGround(123);
 	addBrid();
-	addBarContainer();
-
-	scheduleOnce(schedule_selector(HelloWorld::startGame),3);
-
-	setTouchEnabled(true);
-
-    return true;
+	
+	//scheduleOnce(schedule_selector(HelloWorld::startGame),1);
+	return true;
 }
 
 
@@ -64,23 +71,69 @@ void HelloWorld::initWorld(){
 
 void HelloWorld::startGame( float dt)
 {
+	delete this->world;
+
+	removeAllChildren();
+
+	setTouchEnabled(true);
+
 	scheduleUpdate();
 	schedule(schedule_selector(HelloWorld::addBar),1);
 	//schedule(schedule_selector(HelloWorld::addGround),0.5);
+
+	initWorld();
+
+	addBg();
+	addGround(123);
+	addBrid();
+	addBarContainer();
+
+
 }
 
 void HelloWorld::endGame()
 {
+	this->bird->setGroundSize(this->ground->getContentSize());
+	this->bird->dead();
+
+	setTouchEnabled(false);
+
 	unscheduleUpdate();
 	unschedule(schedule_selector(HelloWorld::addBar));
+	
+	CCSprite *gameover = CCSprite::createWithSpriteFrameName("gameover.png");
+	gameover->setPosition(ccp(this->screenSize.width/2,this->screenSize.height/2));
+	gameover->runAction(CCMoveTo::create(0.5f,ccp(this->screenSize.width/2,this->screenSize.height/2+300)));
+	addChild(gameover,1,1);
+
+	CCMenuItemImage *gameoverMenuItem = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	CCMenu *menu = CCMenu::create(gameoverMenuItem, NULL);
+	//b2BodyDef gameoverMenuItemDef;
+	//gameoverMenuItemDef.type = b2_staticBody;
+	///gameoverMenuItemDef.position = b2Vec2(this->screenSize.width/2/RATIO,this->screenSize.height/2/RATIO);
+	//b2Body *gameoverBody = this->world->CreateBody(&gameoverMenuItemDef);
+	//menu->setPosition( CCPointZero );
+	menu->setPosition(ccp(this->screenSize.width/2,this->screenSize.height/2-100));
+	menu->setOpacity(0);
+
+	CCActionInterval*  move = CCMoveBy::create(0.5, ccp(0,100));
+	CCActionInterval*  show = CCFadeIn::create(0.5);
+	CCAction*  action = CCSpawn::create( show, move, NULL);
+	CCFiniteTimeAction* taction = CCSequence::create(CCDelayTime::create(0.3),action,NULL);
+	
+	menu->runAction(taction);
+	
+
+	addChild(menu,1,2);
 }
 
 //ÕìÌý×ÓÔªËØÁ´½Ó¿ªÊ¼
 void HelloWorld::BeginContact(b2Contact* contact) {
 	if(contact->GetFixtureA()->GetBody()->GetUserData()==bird||
 	   contact->GetFixtureB()->GetBody()->GetUserData()==bird){
+		   CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/dead.wav");
 		   endGame();
-		   CCMessageBox("ÓÎÏ·Ê§°Ü","ÓÎÏ·Ê§°Ü");
+		   //CCMessageBox("ÓÎÏ·Ê§°Ü","ÓÎÏ·Ê§°Ü");
 	}
 }
 
@@ -211,6 +264,8 @@ void HelloWorld::addGround( float dt)
 	this->addChild(this->ground2);
 }
 
+
+
 void HelloWorld::addBar(float dt)
 {
 	float offset  = -rand()%5;
@@ -289,7 +344,16 @@ void HelloWorld::addBarContainer()
 
  void HelloWorld::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
  {
+	 
+	 CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/fly.mp3");
 	this->bird->getB2Body()->SetLinearVelocity(b2Vec2(0,5));
+ }
+
+ 
+
+ void HelloWorld::gameEndCallback(CCObject* pSender)
+ {
+	 startGame(123);
  }
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)

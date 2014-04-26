@@ -8,8 +8,13 @@ public:
 	//飞的方法
 	void fly();
 
+	//死亡的方法
+	void dead();
+
 	//动作
 	CCAction* _flyAction;
+	CCAction* _deadAction;
+	CCAction* _headAction;
 
 
 	ActionSprite(void);

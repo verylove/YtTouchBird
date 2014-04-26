@@ -11,7 +11,7 @@ USING_NS_CC;
 
 #include "F:\yt\soft\cocos2d-x-2.2.3\external\Box2D\Box2D.h"
 #include "B2Sprite.h"
-#include "Bird.h"
+#include "F:\yt\soft\cocos2d-x-2.2.3\projects\YtTouchBird\proj.win32\Bird.h"
 
 
 class HelloWorld : public cocos2d::CCLayer ,public  b2ContactListener
@@ -53,10 +53,15 @@ private :
 		void addBar( float dt);
 		void addBarContainer();
 
+
+
 		void loading();
 
 		void startGame( float dt);
 		void endGame();
+public:
+
+	void gameEndCallback(CCObject* pSender);
 };
 
 #endif // __HELLOWORLD_SCENE_H__

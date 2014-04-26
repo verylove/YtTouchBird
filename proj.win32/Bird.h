@@ -9,6 +9,11 @@ class Bird :
 	
 
 public:
+
+	CCSize groundSize;
+
+	void setGroundSize(CCSize); 
+
 	Bird(void);
 
 	~Bird(void);
