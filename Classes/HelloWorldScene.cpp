@@ -39,7 +39,9 @@ bool HelloWorld::init()
 	addChild(startgame,1);
 
 
-	CCMenuItemImage *startgameItemImage = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	//CCMenuItemImage *startgameItemImage = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	CCMenuItemSprite  *startgameItemImage = CCMenuItemSprite::create(CCSprite::createWithSpriteFrameName("start.png"),
+		CCSprite::createWithSpriteFrameName("start.png"),this,menu_selector(HelloWorld::gameEndCallback));
 	CCMenu* menu = CCMenu::create(startgameItemImage,NULL);
 	addChild(menu,1);
 
@@ -51,7 +53,8 @@ bool HelloWorld::init()
 	addBg();
 	addGround(123);
 	addBrid();
-	
+	gameend = false;
+
 	//scheduleOnce(schedule_selector(HelloWorld::startGame),1);
 	return true;
 }
@@ -72,6 +75,9 @@ void HelloWorld::initWorld(){
 void HelloWorld::startGame( float dt)
 {
 	delete this->world;
+	
+	isTouch = false;
+	gameend = false;
 
 	removeAllChildren();
 
@@ -79,7 +85,6 @@ void HelloWorld::startGame( float dt)
 
 	scheduleUpdate();
 	schedule(schedule_selector(HelloWorld::addBar),1);
-	//schedule(schedule_selector(HelloWorld::addGround),0.5);
 
 	initWorld();
 
@@ -93,20 +98,24 @@ void HelloWorld::startGame( float dt)
 
 void HelloWorld::endGame()
 {
-	this->bird->setGroundSize(this->ground->getContentSize());
-	this->bird->dead();
+	gameend = true;
 
 	setTouchEnabled(false);
 
+	this->bird->dead();
+
+
 	unscheduleUpdate();
 	unschedule(schedule_selector(HelloWorld::addBar));
-	
+
 	CCSprite *gameover = CCSprite::createWithSpriteFrameName("gameover.png");
 	gameover->setPosition(ccp(this->screenSize.width/2,this->screenSize.height/2));
 	gameover->runAction(CCMoveTo::create(0.5f,ccp(this->screenSize.width/2,this->screenSize.height/2+300)));
 	addChild(gameover,1,1);
 
-	CCMenuItemImage *gameoverMenuItem = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	//CCMenuItemImage *gameoverMenuItem = CCMenuItemImage::create("start.png","start.png",this,menu_selector(HelloWorld::gameEndCallback));
+	CCMenuItemSprite  *gameoverMenuItem = CCMenuItemSprite::create(CCSprite::createWithSpriteFrameName("start.png"),
+		CCSprite::createWithSpriteFrameName("start.png"),this,menu_selector(HelloWorld::gameEndCallback));
 	CCMenu *menu = CCMenu::create(gameoverMenuItem, NULL);
 	//b2BodyDef gameoverMenuItemDef;
 	//gameoverMenuItemDef.type = b2_staticBody;
@@ -131,8 +140,8 @@ void HelloWorld::endGame()
 void HelloWorld::BeginContact(b2Contact* contact) {
 	if(contact->GetFixtureA()->GetBody()->GetUserData()==bird||
 	   contact->GetFixtureB()->GetBody()->GetUserData()==bird){
-		   CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/dead.wav");
-		   endGame();
+			  CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/dead.wav");
+			  endGame();
 		   //CCMessageBox("ÓÎÏ·Ê§°Ü","ÓÎÏ·Ê§°Ü");
 	}
 }
@@ -144,6 +153,21 @@ void HelloWorld::EndContact(b2Contact* contact) {
 
 void HelloWorld::update(float dt){
 	this->world->Step(dt,8,3);
+
+	float nowRotation = this->bird->getRotation();
+
+	if(isTouch==true){
+		isTouch = false;
+		this->bird->setRotation(45);
+	}else{		
+		float birdRotation = nowRotation -2;
+		if(birdRotation<-90) birdRotation = -90;
+		this->bird->setRotation(birdRotation);
+	}
+	
+	if(gameend==true) this->bird->setRotation(-90);
+	
+		
 	CCSprite *s;
 	//±éÀú¹÷
 	b2Body *node  = this->world->GetBodyList();
@@ -168,9 +192,6 @@ void HelloWorld::update(float dt){
 			}
 		}
 	}
-	
-	
-
 	
 }
 
@@ -202,8 +223,9 @@ void HelloWorld::addBrid(){
 	bodyDef.position = b2Vec2(screenSize.width/4/RATIO,9);
 	b2Body *birdBody = this->world->CreateBody(&bodyDef);
 
+
 	b2PolygonShape birdShape;
-	birdShape.SetAsBox(size.width/2/RATIO,size.height/2/RATIO);
+	birdShape.SetAsBox(size.width/2/RATIO-0.1,size.height/2/RATIO-0.1);
 
 	b2FixtureDef birdFixtureDef;
 	birdFixtureDef.shape = &birdShape;
@@ -213,14 +235,21 @@ void HelloWorld::addBrid(){
 	this->bird->setB2Body(birdBody);
 	this->addChild(this->bird);
 	this->bird->fly();
+	this->bird->setRotation(0);
 }
+
+
+
 
 void HelloWorld::addGround( float dt)
 {
+
 	//B2Sprite *ground = B2Sprite::create("ground.png");
 	//B2Sprite *ground = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("ground.png"));
 	this->ground = B2Sprite::create("ground.png");
 	CCSize size = ground->getContentSize();
+
+
 
 
 	b2BodyDef bDef;
@@ -262,6 +291,8 @@ void HelloWorld::addGround( float dt)
 	this->ground2->setPTMRatio(RATIO);
 
 	this->addChild(this->ground2);
+
+		
 }
 
 
@@ -344,7 +375,9 @@ void HelloWorld::addBarContainer()
 
  void HelloWorld::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
  {
-	 
+	 isTouch = true;
+
+	 this->bird->getB2Body()->ApplyTorque(50.0f);
 	 CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/fly.mp3");
 	this->bird->getB2Body()->SetLinearVelocity(b2Vec2(0,5));
  }

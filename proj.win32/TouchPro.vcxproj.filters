@@ -27,7 +27,6 @@
     <ClCompile Include="ActionSprite.cpp">
       <Filter>Classes</Filter>
     </ClCompile>
-    <ClCompile Include="VisibleRect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -45,7 +44,6 @@
     <ClInclude Include="ActionSprite.h">
       <Filter>Classes</Filter>
     </ClInclude>
-    <ClInclude Include="VisibleRect.h" />
     <ClInclude Include="Bird.h">
       <Filter>Classes</Filter>
     </ClInclude>

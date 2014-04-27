@@ -37,20 +37,11 @@ bool Bird::init()
 	this->_flyAction = CCRepeatForever::create(CCAnimate::create(flyAnimation));
 	this->_flyAction->retain();
 
-	this->_headAction = CCRepeatForever::create( CCRotateTo::create(1.0f, 90) );
-	//this->_headAction =  CCRepeatForever::create( CCBlink::create(10,100));
-	this->_headAction->retain();
 	
-	int height = 0;
-	if(this->groundSize.width!=0){
-		CCPoint bridPosition = this->getPosition();
-		CCSize  groundSize  = this->groundSize;
-		height = bridPosition.y;
-	}
 
-
+		
 	//ËÀÍöµÄ¶¯×÷
-	this->_deadAction = CCSequence::create(CCMoveBy::create(0.2,ccp(0,height)),NULL);
+	this->_deadAction =CCMoveTo::create(0.5,ccp(screenSize.width/4,320));
 	this->_deadAction->retain();
 
 	return true;
