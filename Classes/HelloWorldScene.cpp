@@ -29,6 +29,8 @@ bool HelloWorld::init()
     }
 	this->screenSize = CCDirector::sharedDirector()->getVisibleSize();
  
+	score = 0;
+
 	//加载PLIST
 	this->cache = CCSpriteFrameCache::sharedSpriteFrameCache();
 	this->cache->addSpriteFramesWithFile("flappy_packer.plist","flappy_packer.png");
@@ -47,6 +49,7 @@ bool HelloWorld::init()
 
 	CocosDenshion::SimpleAudioEngine::sharedEngine()->preloadEffect("mp3/fly.mp3");
 	 CocosDenshion::SimpleAudioEngine::sharedEngine()->preloadEffect("mp3/dead.wav");
+	 CocosDenshion::SimpleAudioEngine::sharedEngine()->preloadEffect("mp3/score.mp3");
 
 	initWorld();
 
@@ -75,18 +78,30 @@ void HelloWorld::initWorld(){
 void HelloWorld::startGame( float dt)
 {
 	delete this->world;
-	
+	this->score = 0;
+
 	isTouch = false;
 	gameend = false;
 
 	removeAllChildren();
 
 	setTouchEnabled(true);
+	
+	initWorld();
+
+
+	CCLabelAtlas* label2 = CCLabelAtlas::create("0123456789", "1.png", 17, 22, '0');
+	addChild(label2, 1, 9);
+	label2->setPosition(ccp(this->screenSize.width/2,this->screenSize.height/2+360));
+	//label2->setColor(ccRED);
+	label2->setScale(2);
+	char string[12] = {0};
+	sprintf(string,"%d",this->score);
+	label2->setString(string);
 
 	scheduleUpdate();
-	schedule(schedule_selector(HelloWorld::addBar),1);
-
-	initWorld();
+	schedule(schedule_selector(HelloWorld::addBar),3);
+	//scheduleOnce(schedule_selector(HelloWorld::addBar),1);
 
 	addBg();
 	addGround(123);
@@ -176,6 +191,25 @@ void HelloWorld::update(float dt){
 		node  = node->GetNext();
 		if(b->GetUserData()!=NULL){
 			if(b->GetUserData()!=this->ground){
+
+				if(b->GetUserData()==this->down_bar){
+
+					float barCenter = b->GetPosition().x-this->down_bar->getContentSize().width/2/RATIO;
+					float birdCenter = this->screenSize.width/4/RATIO+this->bird->getContentSize().width/2/RATIO;
+					CCLog("*** %f , %f\n",barCenter,birdCenter);					
+
+					if(barCenter<birdCenter){
+
+						this->score = this->score + 1;
+						char string[12] = {0};
+						CCLabelAtlas* label2 = (CCLabelAtlas*)getChildByTag(9);
+						sprintf(string, "%d", (int)this->score);
+						label2->setString( string ); 
+						//CocosDenshion::SimpleAudioEngine::sharedEngine()->playEffect("mp3/score.mp3");
+					}
+
+
+				}
 				if(b->GetPosition().x<-3){
 					s = (CCSprite*)b->GetUserData();
 					if(s!=NULL){
@@ -233,7 +267,7 @@ void HelloWorld::addBrid(){
 
 	this->bird->setPTMRatio(RATIO);
 	this->bird->setB2Body(birdBody);
-	this->addChild(this->bird);
+	this->addChild(this->bird,2);
 	this->bird->fly();
 	this->bird->setRotation(0);
 }
@@ -305,7 +339,7 @@ void HelloWorld::addBar(float dt)
 
 	//B2Sprite *down_bar = B2Sprite::create("bar_down.png");
 	
-	B2Sprite *down_bar = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("holdback1.png"));
+	this->down_bar = B2Sprite::createWithSpriteFrame(this->cache->spriteFrameByName("holdback1.png"));
 
 	CCSize down_bar_size = down_bar->getContentSize();
 
@@ -313,9 +347,9 @@ void HelloWorld::addBar(float dt)
 	//类型 运动型
 	down_bar_body_def.type = b2_kinematicBody; 
 	//设置位置右边 高度 + 偏移
-	down_bar_body_def.position = b2Vec2(screenSize.width/RATIO+2,down_bar_size.height/RATIO/2+offset);
+	down_bar_body_def.position = b2Vec2(screenSize.width/RATIO,down_bar_size.height/RATIO/2+offset);
 	//线性运动向右移动
-	down_bar_body_def.linearVelocity = b2Vec2(-5,0);
+	down_bar_body_def.linearVelocity = b2Vec2(-4,0);
 	//是物理世界元素
 	b2Body *down_bar_body = this->world->CreateBody(&down_bar_body_def);
 
@@ -330,9 +364,9 @@ void HelloWorld::addBar(float dt)
 	down_bar_body->CreateFixture(&down_bar_fixture_def);
 
 	//和b2D绑定起来
-	down_bar->setB2Body(down_bar_body);
-	down_bar->setPTMRatio(RATIO);
-	this->barContainer->addChild(down_bar);
+	this->down_bar->setB2Body(down_bar_body);
+	this->down_bar->setPTMRatio(RATIO);
+	this->barContainer->addChild(this->down_bar);
 
 	//up bar 
 	//B2Sprite *up_bar = B2Sprite::create("bar_up.png");
@@ -344,10 +378,10 @@ void HelloWorld::addBar(float dt)
 	//类型 运动型
 	up_bar_body_def.type = b2_kinematicBody; 
 	//设置位置右边 高度 + 偏移
-	up_bar_body_def.position = b2Vec2(screenSize.width/RATIO+2,
+	up_bar_body_def.position = b2Vec2(screenSize.width/RATIO,
 		up_bar_size.height/RATIO+offset+2+up_bar_size.height/2/RATIO);
 	//线性运动向右移动
-	up_bar_body_def.linearVelocity = b2Vec2(-5,0);
+	up_bar_body_def.linearVelocity = b2Vec2(-4,0);
 	//是物理世界元素
 	b2Body *up_bar_body = this->world->CreateBody(&up_bar_body_def);
 
@@ -364,7 +398,7 @@ void HelloWorld::addBar(float dt)
 	up_bar->setB2Body(up_bar_body);
 	up_bar->setPTMRatio(RATIO);
 	this->barContainer->addChild(up_bar);
-
+	
 }
 
 void HelloWorld::addBarContainer()

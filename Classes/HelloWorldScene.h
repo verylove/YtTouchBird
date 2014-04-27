@@ -44,8 +44,11 @@ public:
 	B2Sprite *bg;
 	B2Sprite *ground;
 	B2Sprite *ground2;
+	B2Sprite *down_bar;
+
 	bool isTouch;
 	bool gameend;
+	int score;
 
 private :
 		void addBrid();
