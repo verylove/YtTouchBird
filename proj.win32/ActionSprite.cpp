@@ -27,5 +27,6 @@ void ActionSprite::dead()
 	if(this->_deadAction!=NULL){
 		this->stopAction(_flyAction);
 		this->runAction(this->_deadAction);
+
 	}
 }

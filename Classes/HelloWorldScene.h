@@ -14,6 +14,7 @@ USING_NS_CC;
 #include "F:\yt\soft\cocos2d-x-2.2.3\projects\YtTouchBird\proj.win32\Bird.h"
 
 
+
 class HelloWorld : public cocos2d::CCLayer ,public  b2ContactListener
 {
 public:
@@ -45,10 +46,18 @@ public:
 	B2Sprite *ground;
 	B2Sprite *ground2;
 	B2Sprite *down_bar;
+	B2Sprite *down_bar2;
 
 	bool isTouch;
 	bool gameend;
 	int score;
+	bool ispass;
+	int barTag;
+	bool barArray[2];
+
+	float Xbird;
+	float Xdownbar;
+
 
 private :
 		void addBrid();
@@ -70,3 +79,5 @@ public:
 };
 
 #endif // __HELLOWORLD_SCENE_H__
+
+

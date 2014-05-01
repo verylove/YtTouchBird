@@ -1,6 +1,5 @@
 #include "AppDelegate.h"
-#include "HelloWorldScene.h"
-
+#include "f:\yt\soft\cocos2d-x-2.2.3\projects\YtTouchBird\proj.win32\Welecome.h"
 USING_NS_CC;
 
 AppDelegate::AppDelegate() {
@@ -20,16 +19,17 @@ bool AppDelegate::applicationDidFinishLaunching() {
 	pEGLView->setDesignResolutionSize(720,1280,kResolutionShowAll);
 
     // turn on display FPS
-    pDirector->setDisplayStats(true);
+    pDirector->setDisplayStats(false);
 
     // set FPS. the default value is 1.0/60 if you don't call this
     pDirector->setAnimationInterval(1.0 / 60);
 
     // create a scene. it's an autorelease object
-    CCScene *pScene = HelloWorld::scene();
+	CCScene *wScene = Welecome::scene();
 
     // run
-    pDirector->runWithScene(pScene);
+    pDirector->runWithScene(wScene);
+
 
     return true;
 }
